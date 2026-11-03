@@ -1,0 +1,230 @@
+<title>Cubit Island</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<style>
+/* Layout: a live 3D stage fills the screen; the map rail or the question panel docks beside it, or below it on a phone. */
+:root {
+  --ink: #12304a; --ink-soft: #47637a; --sky: #8fd4f2; --sea: #0b7f93; --deep: #063f5c;
+  --panel: #f3fbff; --line: #c5e2ef; --sun: #ffc531; --sun-dark: #d98f00; --coral: #ff5a4e; --coral-dark: #c8362c;
+  --leaf: #2fa65a; --leaf-dark: #1c7a40; --leaf-pale: #dcf5e3; --coral-pale: #ffe4e0; --white: #ffffff;
+  --display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  --body: "Nunito", "Trebuchet MS", system-ui, sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--deep); color: var(--ink); font: 700 16px/1.4 var(--body); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 4px solid var(--coral); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+#app { position: relative; height: 100%; display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr; overflow: hidden; }
+#stage { position: relative; min-width: 0; min-height: 0; background: linear-gradient(#6fc3ea, #bfe9f5 62%, #e8f8f6); overflow: hidden; }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#app[data-screen="title"] #stage { visibility: hidden; }
+
+/* Chunky buttons with a physical bottom edge, like toy blocks. */
+.btn { border: 0; border-radius: 12px; padding: 12px 20px; font: 400 18px/1.1 var(--display); letter-spacing: .02em; background: var(--white); box-shadow: 0 4px 0 var(--line); transition: transform .08s, box-shadow .08s; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--line); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.btn.go { background: var(--sun); box-shadow: 0 4px 0 var(--sun-dark); }
+.btn.go:hover { box-shadow: 0 5px 0 var(--sun-dark); }
+.btn.go:active { box-shadow: 0 1px 0 var(--sun-dark); }
+.btn.big { font-size: 26px; padding: 16px 38px; border-radius: 16px; }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+
+/* Title */
+#title { position: absolute; inset: 0; z-index: 5; display: grid; align-content: end; justify-items: start; gap: 12px; padding: 24px clamp(16px, 5vw, 64px) clamp(24px, 6vh, 56px); background: var(--deep) center 42% / cover no-repeat; }
+#title::before { content: ""; position: absolute; inset: 0; background: linear-gradient(75deg, rgba(4, 44, 66, .78), transparent 52%); pointer-events: none; }
+#title > * { position: relative; }
+#title h1 { font: 400 clamp(52px, 7vw, 88px)/.95 var(--display); color: var(--white); text-shadow: 0 5px 0 var(--coral-dark); }
+#title p { color: var(--white); font-size: clamp(16px, 1.6vw, 19px); max-width: 25em; font-weight: 800; text-shadow: 0 1px 3px rgba(4, 44, 66, .8); }
+#titleNote { font-size: 15px !important; color: #ffe08a !important; }
+
+/* Island map */
+#hub { position: absolute; inset: 0; z-index: 3; display: grid; grid-template-columns: 1fr 348px; pointer-events: none; }
+#hubTop { align-self: start; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 16px; pointer-events: none; min-width: 0; }
+#hubTop h2 { font: 400 32px/1 var(--display); color: var(--white); text-shadow: 0 3px 0 var(--sea); margin-right: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--white); border-radius: 99px; padding: 5px 13px; font-weight: 900; box-shadow: 0 3px 0 var(--line); pointer-events: auto; border: 0; }
+#rail { pointer-events: auto; background: var(--panel); display: flex; flex-direction: column; min-height: 0; border-left: 5px solid var(--ink); }
+#railHead { padding: 14px 16px 6px; }
+#railHead h3 { font: 400 22px/1.1 var(--display); }
+#railHead p { color: var(--ink-soft); font-size: 14px; }
+#stations { flex: 1; min-height: 0; overflow: auto; padding: 6px 10px; display: grid; gap: 4px; align-content: start; }
+.st { display: grid; grid-template-columns: 62px 1fr; gap: 10px; align-items: center; text-align: left; background: transparent; border: 0; border-radius: 12px; padding: 5px 8px; }
+.st:hover, .st.hot { background: #dff2fb; }
+.st img { width: 62px; height: 62px; object-fit: contain; }
+.st b { display: block; font: 400 19px/1.1 var(--display); }
+.st small { display: block; color: var(--ink-soft); font-size: 13.5px; line-height: 1.25; }
+.st .stars { margin-top: 2px; }
+.stars { letter-spacing: 1px; color: #b9d3df; font-size: 16px; line-height: 1; }
+.stars i { font-style: normal; color: var(--sun-dark); }
+#railFoot { padding: 10px 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; border-top: 2px solid var(--line); }
+
+/* Question screen */
+#play { z-index: 3; background: var(--panel); min-height: 0; min-width: 0; display: flex; flex-direction: column; border-left: 5px solid var(--ink); }
+#app[data-screen="play"] { grid-template-columns: minmax(0, 1fr) minmax(370px, 450px); }
+#playHead { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--ink); color: var(--white); }
+#playHead .x { background: transparent; border: 2px solid rgba(255,255,255,.4); border-radius: 9px; color: var(--white); padding: 3px 10px; font-weight: 800; }
+#where { font: 400 18px/1.1 var(--display); flex: 1; min-width: 0; }
+#where small { display: block; font: 800 12.5px/1.2 var(--body); opacity: .82; }
+#clock { font: 400 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+#clock.low { color: var(--sun); }
+#pips { display: flex; gap: 4px; padding: 8px 14px 0; }
+#pips span { flex: 1; height: 8px; border-radius: 9px; background: var(--line); }
+#pips .now { background: var(--ink); }
+#pips .right { background: var(--leaf); }
+#pips .half { background: var(--sun); }
+#pips .wrong { background: var(--coral); }
+#scroll { flex: 1; min-height: 0; overflow: auto; padding: 10px 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+#prompt { font-size: 18.5px; line-height: 1.32; font-weight: 800; max-width: 65ch; }
+#strip { display: flex; flex-wrap: wrap; gap: 6px; }
+#strip svg { width: 66px; height: 66px; flex: none; }
+#stripText { font-size: 13.5px; color: var(--ink-soft); line-height: 1.3; }
+#options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.opt { position: relative; min-height: 86px; background: var(--white); border: 3px solid var(--line); border-radius: 13px; padding: 8px 8px 8px 8px; display: grid; place-items: center; box-shadow: 0 3px 0 var(--line); transition: transform .08s; }
+.opt:hover:not([disabled]) { border-color: var(--sea); transform: translateY(-1px); }
+.opt[disabled] { cursor: default; }
+.opt .tag { position: absolute; left: 6px; top: 5px; font: 400 15px/1 var(--display); color: var(--ink-soft); }
+.opt svg, .opt img { display: block; width: 100%; max-width: 124px; height: 96px; object-fit: contain; }
+.opt .num { font: 400 36px/1 var(--display); font-variant-numeric: tabular-nums; }
+.opt .face { display: grid; justify-items: center; gap: 4px; font-size: 14px; font-weight: 800; line-height: 1.15; }
+.opt .face svg { width: 48px; height: 48px; }
+.opt.right { border-color: var(--leaf); background: var(--leaf-pale); box-shadow: 0 3px 0 var(--leaf-dark); }
+.opt.wrong { border-color: var(--coral); background: var(--coral-pale); box-shadow: 0 3px 0 var(--coral-dark); }
+.opt.right .tag::after { content: " ✓"; color: var(--leaf-dark); }
+.opt.wrong .tag::after { content: " ✗"; color: var(--coral-dark); }
+.opt.chosen { border-color: var(--ink); background: #e6f4fb; }
+#feedback { display: grid; gap: 10px; }
+#say { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; align-items: start; }
+#say img { width: 74px; height: 74px; object-fit: contain; }
+#say h3 { font: 400 22px/1.1 var(--display); margin-bottom: 3px; }
+#say.good h3 { color: var(--leaf-dark); }
+#say.bad h3 { color: var(--coral-dark); }
+#say p { font-size: 15.5px; line-height: 1.38; }
+#say p + p { margin-top: 5px; }
+#feedbackBtns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* Tools that sit on the stage */
+#tools { position: absolute; left: 12px; bottom: 12px; right: 12px; z-index: 2; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+#tools .btn { pointer-events: auto; font-size: 16px; padding: 9px 14px; }
+#peekNote { background: var(--ink); color: var(--white); padding: 4px 10px; border-radius: 8px; font-size: 14px; }
+#tag { position: absolute; z-index: 2; padding: 3px 11px; border-radius: 9px; background: var(--ink); color: var(--white); font: 400 16px/1.3 var(--display); transform: translate(-50%, -100%); pointer-events: none; white-space: nowrap; }
+
+/* Modal cards: briefing, results, skill chart */
+#modal { position: absolute; inset: 0; z-index: 8; background: rgba(6, 45, 66, .56); display: grid; place-items: center; padding: 16px; overflow: auto; }
+#card { background: var(--panel); border: 5px solid var(--ink); border-radius: 22px; padding: 20px 22px; width: min(520px, 100%); display: grid; gap: 12px; box-shadow: 0 9px 0 var(--ink); }
+#card .head { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; align-items: center; }
+#card .head img { width: 96px; height: 96px; object-fit: contain; }
+#card h2 { font: 400 30px/1.05 var(--display); text-wrap: balance; }
+#card .sub { color: var(--ink-soft); font-size: 15px; }
+#card .tip { background: #ffefbd; border-radius: 12px; padding: 10px 13px; font-size: 16px; }
+#card .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.bigstars { font-size: 44px; letter-spacing: 4px; color: #c8dce6; line-height: 1; }
+.bigstars i { font-style: normal; color: var(--sun-dark); display: inline-block; animation: pop .45s cubic-bezier(.2, 1.6, .4, 1) backwards; }
+.bigstars i:nth-child(2) { animation-delay: .18s; }
+.bigstars i:nth-child(3) { animation-delay: .36s; }
+@keyframes pop { from { transform: scale(0) rotate(-40deg); } }
+.skills { display: grid; gap: 8px; }
+.skill { display: grid; grid-template-columns: 112px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.skill .bar { height: 12px; background: var(--line); border-radius: 9px; overflow: hidden; }
+.skill .bar i { display: block; height: 100%; background: var(--leaf); border-radius: 9px; }
+.skill .val { text-align: right; }
+.review { display: grid; gap: 6px; max-height: 40vh; overflow: auto; }
+.review button { text-align: left; background: var(--white); border: 2px solid var(--line); border-radius: 10px; padding: 7px 11px; font-size: 15px; }
+
+@media (max-width: 800px) {
+  #hub { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; }
+  #hubTop { padding: 10px 12px; }
+  #hubTop h2 { font-size: 25px; }
+  #hubSpace { display: none; }
+  #rail { grid-row: 3; min-width: 0; border-left: 0; border-top: 5px solid var(--ink); }
+  #railHead { display: none; }
+  #stations { grid-auto-flow: column; grid-auto-columns: 158px; overflow-x: auto; overflow-y: hidden; padding: 6px 8px; }
+  .st { grid-template-columns: 46px 1fr; gap: 6px; padding: 4px; }
+  .st img { width: 46px; height: 46px; }
+  .st b { font-size: 15px; }
+  .st small { display: none; }
+  #railFoot { padding: 6px 10px 10px; }
+  #railFoot .btn { font-size: 15px; padding: 9px 12px; }
+  #app[data-screen="play"] { grid-template-columns: 1fr; grid-template-rows: minmax(200px, 38%) minmax(0, 1fr); }
+  #play { border-left: 0; border-top: 5px solid var(--ink); }
+  #prompt { font-size: 16.5px; }
+  .opt { min-height: 72px; }
+  .opt svg, .opt img { height: 74px; }
+  #card { padding: 15px; }
+  #card .head { grid-template-columns: 70px minmax(0, 1fr); }
+  #card .head img { width: 70px; height: 70px; }
+  #card h2 { font-size: 24px; }
+  .skill { grid-template-columns: 88px minmax(0, 1fr) 42px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bigstars i { animation: none; }
+  .btn, .opt { transition: none; }
+}
+</style>
+
+<div id="app" data-screen="title">
+  <div id="stage">
+    <canvas id="gl" aria-label="3D view of the puzzle"></canvas>
+    <div id="tag" hidden></div>
+    <div id="tools" hidden>
+      <button class="btn" id="peek" type="button">Peek: spin it</button>
+      <button class="btn" id="replay" type="button" hidden>Watch the folds</button>
+      <span id="peekNote" hidden>Drag to spin. This one earns half a star.</span>
+    </div>
+  </div>
+
+  <section id="title">
+    <h1>Cubit Island</h1>
+    <p>Six stations of 3D puzzles for OC spatial thinking. Solve them in your head, then watch every answer fold, spin and fly apart in 3D.</p>
+    <button class="btn go big" id="playBtn" type="button">Play</button>
+    <p id="titleNote" hidden></p>
+  </section>
+
+  <section id="hub" hidden>
+    <div id="hubTop">
+      <h2>Cubit Island</h2>
+      <span class="chip" id="totalStars"></span>
+      <button class="chip" id="soundBtn" type="button"></button>
+    </div>
+    <div id="rail">
+      <div id="railHead">
+        <h3>Pick a station</h3>
+        <p id="nextUp"></p>
+      </div>
+      <div id="stations"></div>
+      <div id="railFoot">
+        <button class="btn go" id="examBtn" type="button">Exam Flight: 10 in 10 minutes</button>
+        <button class="btn" id="skillsBtn" type="button">Skills</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="play" hidden>
+    <div id="playHead">
+      <button class="x" id="leave" type="button">Map</button>
+      <div id="where"></div>
+      <div id="clock" hidden></div>
+    </div>
+    <div id="pips"></div>
+    <div id="scroll">
+      <p id="prompt"></p>
+      <div id="stripWrap" hidden><div id="strip"></div><p id="stripText"></p></div>
+      <div id="options"></div>
+      <div id="feedback" hidden>
+        <div id="say"><img id="sayImg" alt=""><div id="sayText"></div></div>
+        <div id="feedbackBtns">
+          <button class="btn" id="again" type="button">Watch again</button>
+          <button class="btn go" id="next" type="button">Next</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="modal" hidden><div id="card" role="dialog" aria-modal="true"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>/*ASSETS*/</script>
+<script>/*PUZZLES*/</script>
+<script>/*GAME*/</script>
