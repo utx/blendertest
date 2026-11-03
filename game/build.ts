@@ -22,6 +22,9 @@ const html = Deno.readTextFileSync("src/template.html")
 
 Deno.mkdirSync("dist", { recursive: true });
 Deno.writeTextFileSync("dist/cubit-island.html", html);
-// A wrapped copy for testing in a plain browser, matching what the artifact skeleton adds.
-Deno.writeTextFileSync("dist/preview.html", `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${html}</body></html>`);
+// A wrapped copy for plain browsers, matching what the artifact skeleton adds. GitHub Pages serves it from docs/.
+const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${html}</body></html>`;
+Deno.writeTextFileSync("dist/preview.html", page);
+Deno.mkdirSync("../docs", { recursive: true });
+Deno.writeTextFileSync("../docs/index.html", page);
 console.log("built", (html.length / 1e6).toFixed(2), "MB");

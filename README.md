@@ -51,3 +51,14 @@ Keep Blender open with the add-on connected while you work.
   tab again, and make sure only one MCP client is connected to it.
 - **Undo:** the add-on runs Python inside Blender, so save your `.blend` file before
   big changes. `Ctrl+Z` works for most edits.
+
+## Cubit Island
+
+`game/` holds a 3D spatial reasoning game for NSW Opportunity Class (OC) test practice,
+with models and renders built in Blender. It is an unofficial practice game, not made by
+or connected with the NSW Department of Education.
+
+- Play it: https://utx.github.io/blendertest/ (once GitHub Pages is on for the `docs/` folder)
+- Rebuild the models: `blender --background --factory-startup --python blender/build_assets.py -- assets` from `game/`
+- Rebuild the page: `deno run --allow-read --allow-write --allow-net=jsr.io build.ts` from `game/`
+- Test the puzzle answers: `deno run --allow-read src/puzzles.test.js` from `game/`
