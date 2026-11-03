@@ -23,7 +23,7 @@ from a Claude Code cloud session).
      tick the checkbox to enable it.
 
 3. **Connect Blender**
-   - In the 3D Viewport press `N` to open the sidebar, open the **BlenderMCP** tab,
+   - In the 3D Viewport press `N` to open the sidebar, open the **MCP for Blender** tab (older versions call it **BlenderMCP**),
      and click **Connect to Claude** (or **Start MCP Server**, depending on the version).
 
 ## Using it
@@ -47,7 +47,7 @@ Keep Blender open with the add-on connected while you work.
 
 - **`blender` shows as failed in `/mcp`:** make sure `uvx --version` works in the
   same terminal. On Windows you may need to restart the terminal after installing uv.
-- **Claude says it can't reach Blender:** click Connect in the BlenderMCP sidebar
+- **Claude says it can't reach Blender:** click Connect in the MCP for Blender sidebar
   tab again, and make sure only one MCP client is connected to it.
 - **Undo:** the add-on runs Python inside Blender, so save your `.blend` file before
   big changes. `Ctrl+Z` works for most edits.
